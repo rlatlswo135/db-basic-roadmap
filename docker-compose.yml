@@ -1,0 +1,20 @@
+# docker compose up -d   로 띄우고
+# docker compose down     로 내림 (데이터는 named volume에 보존됨)
+# docker compose down -v  로 데이터까지 완전 초기화
+services:
+  db:
+    image: postgres:16
+    container_name: learn-db
+    environment:
+      POSTGRES_PASSWORD: devpass
+      POSTGRES_DB: todoapp
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # (선택) 컨테이너 "첫 생성" 시 sql/init/*.sql 을 자동 실행하고 싶으면 주석 해제.
+      # 단, 학습 목적이면 직접 psql로 실행해보는 걸 추천 → 기본은 꺼둠.
+      # - ./sql/init:/docker-entrypoint-initdb.d
+
+volumes:
+  pgdata:
