@@ -40,3 +40,15 @@ SELECT title,project_name,position FROM tasks ORDER BY position NULLS LAST LIMIT
 -- LIMIT(몇개까지) / OFFSET(건너뛸 row)
 SELECT id,title FROM tasks LIMIT 15 OFFSET 15;
 -- 3-5 집계 (GROUP BY)
+-- COUNT
+SELECT project_name,COUNT(*) AS count FROM tasks GROUP BY project_name;
+-- SUM
+SELECT priority,SUM(priority) FROM tasks GROUP BY priority;
+-- AVG
+SELECT priority,AVG(id) AS avg_id FROM tasks GROUP BY priority;
+-- MIN
+SELECT priority,MIN(id) AS min_id FROM tasks GROUP BY priority;
+-- MAX
+SELECT priority,MAX(id) AS max_id FROM tasks GROUP BY priority;
+-- GROUP BY — "프로젝트별 태스크 수"
+SELECT project_name,COUNT(*) AS count FROM tasks GROUP BY project_name;

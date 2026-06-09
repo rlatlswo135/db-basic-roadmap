@@ -197,8 +197,8 @@ CREATE TABLE comments (
 - [v] LIMIT / OFFSET — 페이지네이션 (10개씩 2페이지째)
 
 #### 3-5. 집계 (GROUP BY)
-- [ ] COUNT / SUM / AVG / MIN / MAX — 한 번씩
-- [ ] GROUP BY — "프로젝트별 태스크 수"
+- [v] COUNT / SUM / AVG / MIN / MAX — 한 번씩
+- [v] GROUP BY — "프로젝트별 태스크 수"
 - [ ] HAVING — "태스크 5개 초과 프로젝트만" (WHERE와 위치/시점 차이 체감)
 - [ ] 조건부 집계 — "사용자별 완료율" (`COUNT(*) FILTER (WHERE status='done')` 또는 `AVG((status='done')::int)`)
 - [ ] COUNT(*) vs COUNT(컬럼) 차이 — NULL이 빠지는 것 직접 확인
