@@ -37,6 +37,8 @@ CREATE TABLE tasks (
   position      INT,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- ✊🏻 project_name, assignee_name 컬럼은 project조인시에 가져올수있는부분같은데 또 선언되어있어서 문제되보임
+-- ✊🏻 tag_scv 는 뭐가문제인지 모르겠는데,,
 
 CREATE TABLE task_tags (             -- N:M 교차 테이블 (올바른 방식)
   task_id   BIGINT NOT NULL REFERENCES tasks(id),
@@ -44,6 +46,7 @@ CREATE TABLE task_tags (             -- N:M 교차 테이블 (올바른 방식)
   tag_color TEXT,                    -- ⚠️ 지뢰: tag_id에만 종속 (→ 2NF에서 tags로 이동)
   PRIMARY KEY (task_id, tag_id)
 );
+-- ✊🏻 tag_color는 tag테이블에서 가져야할 컬럼같음.
 
 CREATE TABLE comments (
   id         BIGSERIAL PRIMARY KEY,

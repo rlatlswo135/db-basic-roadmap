@@ -28,7 +28,7 @@
 
 ---
 
-## Phase 1 — 관계형 모델 (여기서 전체 스키마를 다 만든다)
+## Phase 1 — 관계형 모델 (여기서 전체 스키마를 다 만든다) -- ✅
 
 이 단계가 로드맵의 척추예요. 여기서 만든 모델이 마지막 정규화까지 그대로 살아남습니다.
 
@@ -37,6 +37,8 @@
 - [ ] 키: 기본키(PK) / 외래키(FK) / 후보키 / **대리키(surrogate, 예: 자동증가 id) vs 자연키(natural)**
 - [ ] 카디널리티: 1:1, 1:N, N:M — 우리 도메인에서 각각 어디에 해당하나?
 - [ ] 제약: `NOT NULL`, `UNIQUE`, `CHECK`, `DEFAULT`, FK의 `REFERENCES`
+- [ ] **데이터 타입 감각:** 왜 이 컬럼이 이 타입인가 — `BIGINT`(id) / `TEXT`(문자) / `DATE` vs `TIMESTAMPTZ`(**타임존 포함**, 그래서 `created_at`은 TIMESTAMPTZ) / `BOOLEAN` / `NUMERIC` vs `FLOAT`(**돈·정확값엔 FLOAT 금지**). 캐스팅 `::` (예: `'3'::int`)
+- [ ] **FK 참조 동작:** 부모를 지우면 자식은? — `ON DELETE RESTRICT`(기본, 막음) / `CASCADE`(같이 삭제) / `SET NULL`. "프로젝트 삭제 시 그 태스크는 어떻게 돼야 하나" 한 줄 정해보기
 - [ ] **N:M은 그대로 못 만든다** → 교차 테이블(junction table)로 푼다. (Task ↔ Tag → `task_tags`)
 
 ### 1-2. 도메인을 관계로 분해
@@ -106,6 +108,7 @@ CREATE TABLE comments (
 
 - [ ] 위 6개 테이블 전부 생성
 - [ ] FK가 실제로 동작하는지 확인: 없는 `project_id`로 `tasks` INSERT 시도 → 에러 나는 것 보기
+- [ ] FK 참조 동작 확인: 태스크가 달린 `project`를 DELETE 시도 → 기본(RESTRICT)이라 막히는 것 보기 (CASCADE였다면 어떻게 달라질지 한 줄 메모)
 - [ ] 심어둔 지뢰 4개가 각각 왜 문제일지 *미리* 한 줄씩 메모만 해두기 (정답은 Phase 5에서 맞춰봄)
 
 **산출물:** `schema_v1.sql` + 지뢰 4개에 대한 추측 메모
@@ -116,6 +119,7 @@ CREATE TABLE comments (
 
 - [ ] 엔티티 5개와 관계를 그림으로: User · Project · Task · Tag · Comment
 - [ ] N:M(Task–Tag)이 `task_tags`로 풀린 모습이 그림에 드러나게
+- [ ] 관계선에 **PK/FK 표시 + 카디널리티(까마귀발 표기: 1, N)**까지 드러나게 — "어느 쪽이 1이고 어느 쪽이 N인지" 한눈에
 - [ ] 도구: [dbdiagram.io](https://dbdiagram.io) — 코드로 그려서 무료, 빠름. v1 스키마를 그대로 옮겨 그리기
 
 **산출물:** 전체 ERD 이미지 1장
@@ -133,30 +137,124 @@ CREATE TABLE comments (
          u.id, u.name,
          'task ' || g,
          (ARRAY['todo','doing','done'])[floor(random()*3+1)],
-         floor(random()*5+1),
+         floor(random()*5+1),   
          'urgent,home'
   FROM generate_series(1, 300) g
-  JOIN LATERAL (SELECT id, name FROM projects ORDER BY random() LIMIT 1) p ON true
-  JOIN LATERAL (SELECT id, name FROM users    ORDER BY random() LIMIT 1) u ON true;
+  JOIN LATERAL (SELECT id, name FROM projects WHERE g > 0 ORDER BY random() LIMIT 1) p ON true
+  JOIN LATERAL (SELECT id, name FROM users    WHERE g > 0 ORDER BY random() LIMIT 1) u ON true;
   ```
   (지뢰 컬럼들도 일부러 같이 채웁니다 — 정규화 때 고칠 대상이니까)
+- [ ] **`task_tags`도 채우기** (J-4 N:M 조회 연습용). 태스크마다 태그 1~3개를 무작위로 연결:
+  ```sql
+  INSERT INTO task_tags (task_id, tag_id)
+  SELECT t.id, tg.id
+  FROM tasks t
+  JOIN LATERAL (
+    SELECT id FROM tags ORDER BY random() LIMIT (floor(random()*3)+1)::int
+  ) tg ON true
+  ON CONFLICT (task_id, tag_id) DO NOTHING;   -- 복합 PK 중복 방지
+  ```
+  > ⚠️ 이러면 태그가 `tag_csv`(지뢰)와 `task_tags`(정답) **두 군데**에 살게 됩니다.
+  > 일부러 그렇게 둡니다 — "같은 데이터가 두 곳에 있는 불편함"이 바로 Phase 5(1NF)에서 고칠 대상이거든요.
 
 ### 쿼리 전부 해보기
-- [ ] **기본 CRUD:** INSERT / SELECT / UPDATE / DELETE
-- [ ] **필터·정렬:** WHERE, ORDER BY, LIMIT, LIKE, IN, BETWEEN
-- [ ] **JOIN 전부:** INNER / LEFT / SELF JOIN
-  - "각 프로젝트의 미완료 태스크 목록" (projects ⨝ tasks)
-  - "담당자가 없는 태스크" (LEFT JOIN + IS NULL)
-- [ ] **집계:** GROUP BY, HAVING, COUNT/SUM/AVG
-  - "사용자별 완료율", "프로젝트별 태스크 수 (5개 초과만)"
-- [ ] **서브쿼리:** WHERE 절 / FROM 절(파생 테이블) / 상관 서브쿼리 / EXISTS
-  - "전체 평균보다 태스크가 많은 프로젝트"
-- [ ] **N:M 조회:** `task_tags` 경유
-  - "특정 태그가 달린 태스크"
-  - "두 태그를 *모두* 가진 태스크" (의외로 헷갈림 — 좋은 연습)
-- [ ] **(보너스) 윈도우 함수:** ROW_NUMBER, RANK
-  - "프로젝트별 최신 태스크 3개씩"
-- [ ] **인덱스 맛보기:** 태스크를 20만 건으로 늘린 뒤, 자주 거는 WHERE 컬럼에 인덱스 전/후 `EXPLAIN ANALYZE` 비교 (Seq Scan → Index Scan 바뀌는 것 관찰)
+
+> 각 항목 = "우리 Todo 도메인에 맞는 쿼리 1개 작성"이 산출물. 눈으로 읽고 체크만 치지 않기.
+
+#### 3-0. 먼저 머리에 넣을 개념 (쿼리 짜기 전에 — 아래 절들 하면서 체감됨)
+- [v] **선언적·집합 기반 사고:** "어떻게 루프 돌까"가 아니라 "무슨 집합을 원하나"를 기술 → 실행 방법은 옵티마이저가 정함. (FE의 `for`문 감각 버리기)
+- [v] **논리적 실행 순서:** `FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT`
+  - 이게 "왜 WHERE에선 SELECT 별칭을 못 쓰나(아직 SELECT 전)", "WHERE vs HAVING 차이(집계 전/후)", "ORDER BY에선 왜 별칭이 되나(SELECT 후)"를 전부 설명함. **아래 모든 절의 뼈대.**
+- [v] **NULL = 3값 논리:** 참/거짓이 아니라 참/거짓/**UNKNOWN**. `x = NULL`은 항상 안 맞음 → 반드시 `IS NULL`. `NOT IN (..., NULL)`이 통째로 빈 결과가 되는 함정 직접 재현
+- [v] **GROUP BY 규칙:** SELECT의 비(非)집계 컬럼은 전부 GROUP BY에 있어야 함 (어기면 에러 — 가장 흔한 첫 실수)
+
+#### 3-1. 기본 CRUD
+- [v] INSERT — 단일 행 / 여러 행 한 번에 (`VALUES (...), (...), ...`)
+- [v] INSERT ... RETURNING id — 방금 만든 행의 PK 돌려받기
+- [v] SELECT — 전체(`*`) vs 필요한 컬럼만 (실무선 `*` 지양하는 이유 체감)
+- [v] UPDATE — 특정 태스크 `status` 변경 (WHERE 꼭 붙이기)
+- [v] DELETE — 특정 comment 삭제 (WHERE 없는 DELETE/UPDATE가 왜 무서운지 한 줄 메모)
+
+#### 3-2. SELECT 다듬기 (컬럼 가공)
+- [v] 별칭 `AS` — `title AS task_title`
+- [v] DISTINCT — "태스크가 하나라도 있는 `project_id` 목록"
+- [v] 계산·표현식 컬럼 — `priority * 10`, 문자열 연결 `project_name || ' / ' || title`
+- [v] CASE WHEN — `status`('todo'/'doing'/'done')를 한글 라벨로 매핑
+- [v] COALESCE — `assignee_name`이 NULL이면 '미배정'으로 치환
+
+#### 3-3. WHERE (필터)
+- [v] 비교 연산자 — `priority >= 4`, `status <> 'done'`
+- [v] AND / OR / NOT + 괄호로 우선순위 — "priority 높고(>=4) 아직 안 끝난 것"
+- [v] IN / NOT IN — `status IN ('todo','doing')`
+- [v] BETWEEN — `due_date BETWEEN '...' AND '...'`
+- [v] LIKE / ILIKE + 와일드카드(`%`, `_`) — title 검색 (ILIKE = 대소문자 무시)
+- [v] IS NULL / IS NOT NULL — "담당자 없는 태스크" (`assignee_id IS NULL`)
+- [v] 날짜 비교 — `due_date < now()` (기한 지난 태스크)
+
+#### 3-4. 정렬·페이징
+- [v] ORDER BY 단일/복수 컬럼, ASC/DESC — `priority DESC, due_date ASC`
+- [v] NULLS FIRST / NULLS LAST — 마감일 없는 태스크를 뒤로
+- [v] LIMIT / OFFSET — 페이지네이션 (10개씩 2페이지째)
+
+#### 3-5. 집계 (GROUP BY)
+- [ ] COUNT / SUM / AVG / MIN / MAX — 한 번씩
+- [ ] GROUP BY — "프로젝트별 태스크 수"
+- [ ] HAVING — "태스크 5개 초과 프로젝트만" (WHERE와 위치/시점 차이 체감)
+- [ ] 조건부 집계 — "사용자별 완료율" (`COUNT(*) FILTER (WHERE status='done')` 또는 `AVG((status='done')::int)`)
+- [ ] COUNT(*) vs COUNT(컬럼) 차이 — NULL이 빠지는 것 직접 확인
+
+#### 3-6. 서브쿼리 · CTE
+- [ ] WHERE 절 서브쿼리 — "전체 평균 priority보다 높은 태스크"
+- [ ] FROM 절 파생 테이블 — 프로젝트별 집계를 다시 필터
+- [ ] 상관 서브쿼리(correlated) — 바깥 행마다 도는 것 체감
+- [ ] EXISTS / NOT EXISTS — "댓글이 하나라도 달린 태스크" / "안 달린 태스크"
+- [ ] IN-서브쿼리 vs JOIN — 같은 결과를 둘 다로 짜보고 비교
+- [ ] **CTE (`WITH` 절):** 위 FROM 파생테이블을 `WITH 이름 AS (...)`로 빼서 가독성 비교 — 길고 중첩된 쿼리를 단계로 쪼개는 현대식 기본기
+
+#### 3-7. 집합 연산
+- [ ] UNION vs UNION ALL — 결과 행 수 비교로 **중복 제거 비용** 체감 (중복 신경 안 쓰면 ALL이 빠름)
+- [ ] INTERSECT — "두 조건을 동시에 만족하는 태스크"
+- [ ] EXCEPT — "A엔 있고 B엔 없는" 차집합
+
+---
+
+### JOIN 집중 (실무에서 제일 많이 쓰는 부분 — 따로 뺌)
+
+> 화면 하나 그리려면 거의 항상 2~4개 테이블을 합쳐야 함. **종류**보다 **상황별 패턴**이 본론.
+
+#### J-1. 종류별 한 번씩
+- [ ] INNER JOIN — "프로젝트 + 그 프로젝트의 태스크" (양쪽 다 있는 것만)
+- [ ] LEFT JOIN — "모든 프로젝트 + 태스크" (태스크 0개 프로젝트도 나오게)
+- [ ] RIGHT JOIN — LEFT를 뒤집으면 같다는 것만 확인 (실무선 LEFT로 통일하는 이유)
+- [ ] SELF JOIN — "같은 프로젝트에 속한 다른 태스크 짝" (`tasks t1 ⨝ tasks t2 ON t1.project_id=t2.project_id AND t1.id<>t2.id`)
+- [ ] CROSS JOIN — 카티전 곱이 뭔지 작은 데이터로 한 번
+
+#### J-2. 자주 쓰는 상황 (이게 본론)
+- [ ] **부모+자식 한 줄에** — "프로젝트명 + 태스크 제목"
+- [ ] **3개 이상 JOIN** — `tasks + projects + users` (태스크 / 프로젝트명 / 담당자명 한 번에)
+- [ ] **자식 없는 부모 찾기 (anti-join)** — "태스크가 하나도 없는 프로젝트" (LEFT JOIN + IS NULL)
+- [ ] **담당자 없는 태스크** — LEFT JOIN users + IS NULL (그냥 `assignee_id IS NULL`과 결과 비교)
+- [ ] **JOIN + 집계** — "프로젝트별 태스크 수" (INNER면 0개가 사라짐 → LEFT JOIN이라야 0도 포함)
+- [ ] **JOIN + 필터** — "특정 사용자가 담당인 미완료 태스크 + 프로젝트명"
+
+#### J-3. 자주 틀리는 포인트
+- [ ] **ON vs WHERE** — LEFT JOIN에서 오른쪽 테이블 조건을 WHERE에 두면 사실상 INNER로 변하는 함정 직접 재현
+- [ ] **행 뻥튀기(곱집합)** — N:M JOIN 후 COUNT가 부풀려지는 것 관찰 → `DISTINCT` 또는 먼저 집계 후 JOIN
+- [ ] **USING vs ON** — 컬럼명이 같을 때 USING 축약 (참고만)
+
+#### J-4. N:M 조회 (`task_tags` 경유)
+- [ ] "특정 태그가 달린 태스크" — `tasks ⨝ task_tags ⨝ tags`
+- [ ] "한 태스크에 달린 태그 전부" — 반대 방향
+- [ ] "두 태그를 *모두* 가진 태스크" — `GROUP BY task_id HAVING COUNT(*)=2` / self-join / INTERSECT 중 한 가지 (의외로 헷갈림 — 좋은 연습)
+- [ ] "태그가 하나도 없는 태스크" — LEFT JOIN task_tags + IS NULL
+
+---
+
+### 그 외
+- [ ] **(보너스) 윈도우 함수:** ROW_NUMBER / RANK / DENSE_RANK
+  - "프로젝트별 최신 태스크 3개씩", "프로젝트 내 priority 순위"
+- [ ] **인덱스 개념:** B-tree 한 장 그림으로 이해 — PK엔 자동 생성됨 / 읽기↑ 대신 **쓰기·용량↓**(공짜 아님) / 복합 인덱스는 **컬럼 순서**가 중요 / `WHERE`에 함수·연산 씌우면 인덱스 안 탐
+- [ ] **인덱스 맛보기(실험):** 태스크를 20만 건으로 늘린 뒤, 자주 거는 WHERE 컬럼에 인덱스 전/후 `EXPLAIN ANALYZE` 비교 (Seq Scan → Index Scan 바뀌는 것 관찰)
 
 **산출물:** `queries.sql` (주제별 모음) + 인덱스 전/후 EXPLAIN 캡처
 
@@ -168,7 +266,9 @@ psql 창을 **2개** 띄워놓고 진행하면 제일 잘 와닿아요.
 
 - [ ] ACID 한 줄씩 정리
 - [ ] BEGIN / COMMIT / ROLLBACK 직접 써보기
-- [ ] **Lost Update 재현:** 두 세션이 같은 `task`의 `status`를 동시에 UPDATE → 한쪽 변경이 사라지는 것 관찰
+- [ ] **Lost Update 재현 (read-modify-write):** 두 세션이 같은 `task`의 `position`을 **읽고 → +1 해서 쓰기**
+  - 세션A `SELECT position` (예: 10) → 세션B `SELECT position` (똑같이 10) → A가 `UPDATE ... SET position=11` → B도 `UPDATE ... SET position=11`
+  - 결과는 12가 아니라 **11** — A가 더한 +1이 통째로 증발. (`SET position=position+1` 블라인드 쓰기로 바꾸면 왜 안 사라지는지도 비교)
 - [ ] **격리 수준** 바꿔가며 현상 재현·관찰
   - `SET TRANSACTION ISOLATION LEVEL READ COMMITTED | REPEATABLE READ | SERIALIZABLE;`
   - Non-repeatable Read / Phantom Read 가 각 레벨에서 보이는지 / 막히는지
