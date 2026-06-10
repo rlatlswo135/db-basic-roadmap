@@ -52,3 +52,11 @@ SELECT priority,MIN(id) AS min_id FROM tasks GROUP BY priority;
 SELECT priority,MAX(id) AS max_id FROM tasks GROUP BY priority;
 -- GROUP BY — "프로젝트별 태스크 수"
 SELECT project_name,COUNT(*) AS count FROM tasks GROUP BY project_name;
+-- HAVING
+SELECT project_name,COUNT(*) FROM tasks GROUP BY project_name HAVING COUNT(*) > 5;
+-- 조건부 집계 (FILTER 등)
+SELECT project_name, COUNT(*) FILTER (WHERE status='done') AS done_status FROM tasks GROUP BY project_name;
+SELECT project_name, AVG((status='done')::int) FROM tasks GROUP BY project_name;
+-- COUNT(*) vs COUNT(column)
+SELECT project_name,COUNT(*) FROM tasks GROUP BY project_name;
+SELECT project_name,COUNT(position) FROM tasks GROUP BY project_name;

@@ -199,9 +199,9 @@ CREATE TABLE comments (
 #### 3-5. 집계 (GROUP BY)
 - [v] COUNT / SUM / AVG / MIN / MAX — 한 번씩
 - [v] GROUP BY — "프로젝트별 태스크 수"
-- [ ] HAVING — "태스크 5개 초과 프로젝트만" (WHERE와 위치/시점 차이 체감)
-- [ ] 조건부 집계 — "사용자별 완료율" (`COUNT(*) FILTER (WHERE status='done')` 또는 `AVG((status='done')::int)`)
-- [ ] COUNT(*) vs COUNT(컬럼) 차이 — NULL이 빠지는 것 직접 확인
+- [v] HAVING — "태스크 5개 초과 프로젝트만" (WHERE와 위치/시점 차이 체감)
+- [v] 조건부 집계 — "사용자별 완료율" (`COUNT(*) FILTER (WHERE status='done')` 또는 `AVG((status='done')::int)`)
+- [v] COUNT(*) vs COUNT(컬럼) 차이 — NULL이 빠지는 것 직접 확인
 
 #### 3-6. 서브쿼리 · CTE
 - [ ] WHERE 절 서브쿼리 — "전체 평균 priority보다 높은 태스크"
