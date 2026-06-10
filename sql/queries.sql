@@ -60,3 +60,14 @@ SELECT project_name, AVG((status='done')::int) FROM tasks GROUP BY project_name;
 -- COUNT(*) vs COUNT(column)
 SELECT project_name,COUNT(*) FROM tasks GROUP BY project_name;
 SELECT project_name,COUNT(position) FROM tasks GROUP BY project_name;
+-- 3-6 서브쿼리
+-- WHERE 절 서브쿼리 - 전체 평균 priority보다 높은 태스크
+SELECT title,priority FROM tasks WHERE priority > (SELECT AVG(priority) FROM tasks) ORDER BY priority DESC;
+-- FROM 절 서브쿼리 - 프로젝트별 집계를 다시 필터
+SELECT t.title,t.priority 
+FROM tasks t, (SELECT AVG(priority) AS priority FROM tasks) AS a 
+WHERE t.priority > a.priority;
+-- 상관 서브쿼리(correlated) — 바깥 행마다 도는 것 체감
+SELECT project_name,COUNT(*) FILTER(WHERE priority > avg_priority) 
+FROM tasks,(SELECT AVG(priority) AS avg_priority FROM tasks) AS avg 
+GROUP BY project_name;

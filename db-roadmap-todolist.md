@@ -204,9 +204,9 @@ CREATE TABLE comments (
 - [v] COUNT(*) vs COUNT(컬럼) 차이 — NULL이 빠지는 것 직접 확인
 
 #### 3-6. 서브쿼리 · CTE
-- [ ] WHERE 절 서브쿼리 — "전체 평균 priority보다 높은 태스크"
-- [ ] FROM 절 파생 테이블 — 프로젝트별 집계를 다시 필터
-- [ ] 상관 서브쿼리(correlated) — 바깥 행마다 도는 것 체감
+- [v] WHERE 절 서브쿼리 — "전체 평균 priority보다 높은 태스크"
+- [v] FROM 절 파생 테이블 — 프로젝트별 집계를 다시 필터
+- [v] 상관 서브쿼리(correlated) — 바깥 행마다 도는 것 체감
 - [ ] EXISTS / NOT EXISTS — "댓글이 하나라도 달린 태스크" / "안 달린 태스크"
 - [ ] IN-서브쿼리 vs JOIN — 같은 결과를 둘 다로 짜보고 비교
 - [ ] **CTE (`WITH` 절):** 위 FROM 파생테이블을 `WITH 이름 AS (...)`로 빼서 가독성 비교 — 길고 중첩된 쿼리를 단계로 쪼개는 현대식 기본기
