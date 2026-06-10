@@ -71,3 +71,9 @@ WHERE t.priority > a.priority;
 SELECT project_name,COUNT(*) FILTER(WHERE priority > avg_priority) 
 FROM tasks,(SELECT AVG(priority) AS avg_priority FROM tasks) AS avg 
 GROUP BY project_name;
+-- EXISTS / NOT EXISTS 중요) EXISTS는 서브쿼리의 결과 row가 하나라도 있냐 없냐를 판단하는거다 NOT EXISTS는 반대로 하나도 없냐를 판단하는거다
+SELECT project_name,title FROM tasks t WHERE EXISTS(SELECT 1 FROM comments c WHERE c.task_id = t.id);
+-- IN 절 서브쿼리 (*단일컬럼* 이 포함되어있냐 판단. EXISTS와 혼동 주의)
+SELECT project_name,title FROM tasks t WHERE t.id IN(SELECT task_id FROM comments);
+-- JOIN절 =>  왜 IN, EXISTS랑 결과가 다른지 묻기!!
+SELECT DISTINCT project_name,title FROM tasks t JOIN comments c ON t.id = c.task_id;
