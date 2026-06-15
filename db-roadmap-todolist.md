@@ -209,12 +209,12 @@ CREATE TABLE comments (
 - [v] 상관 서브쿼리(correlated) — 바깥 행마다 도는 것 체감
 - [v] EXISTS / NOT EXISTS — "댓글이 하나라도 달린 태스크" / "안 달린 태스크"
 - [v] IN-서브쿼리 vs JOIN — 같은 결과를 둘 다로 짜보고 비교
-- [ ] **CTE (`WITH` 절):** 위 FROM 파생테이블을 `WITH 이름 AS (...)`로 빼서 가독성 비교 — 길고 중첩된 쿼리를 단계로 쪼개는 현대식 기본기
+- [v] **CTE (`WITH` 절):** 위 FROM 파생테이블을 `WITH 이름 AS (...)`로 빼서 가독성 비교 — 길고 중첩된 쿼리를 단계로 쪼개는 현대식 기본기
 
 #### 3-7. 집합 연산
-- [ ] UNION vs UNION ALL — 결과 행 수 비교로 **중복 제거 비용** 체감 (중복 신경 안 쓰면 ALL이 빠름)
-- [ ] INTERSECT — "두 조건을 동시에 만족하는 태스크"
-- [ ] EXCEPT — "A엔 있고 B엔 없는" 차집합
+- [v] UNION vs UNION ALL — 결과 행 수 비교로 **중복 제거 비용** 체감 (중복 신경 안 쓰면 ALL이 빠름)
+- [v] INTERSECT — "두 조건을 동시에 만족하는 태스크"
+- [v] EXCEPT — "A엔 있고 B엔 없는" 차집합
 
 ---
 
@@ -223,7 +223,7 @@ CREATE TABLE comments (
 > 화면 하나 그리려면 거의 항상 2~4개 테이블을 합쳐야 함. **종류**보다 **상황별 패턴**이 본론.
 
 #### J-1. 종류별 한 번씩
-- [ ] INNER JOIN — "프로젝트 + 그 프로젝트의 태스크" (양쪽 다 있는 것만)
+- [v] INNER JOIN — "프로젝트 + 그 프로젝트의 태스크" (양쪽 다 있는 것만)
 - [ ] LEFT JOIN — "모든 프로젝트 + 태스크" (태스크 0개 프로젝트도 나오게)
 - [ ] RIGHT JOIN — LEFT를 뒤집으면 같다는 것만 확인 (실무선 LEFT로 통일하는 이유)
 - [ ] SELF JOIN — "같은 프로젝트에 속한 다른 태스크 짝" (`tasks t1 ⨝ tasks t2 ON t1.project_id=t2.project_id AND t1.id<>t2.id`)

@@ -77,3 +77,22 @@ SELECT project_name,title FROM tasks t WHERE EXISTS(SELECT 1 FROM comments c WHE
 SELECT project_name,title FROM tasks t WHERE t.id IN(SELECT task_id FROM comments);
 -- JOIN절 =>  왜 IN, EXISTS랑 결과가 다른지 묻기!!
 SELECT DISTINCT project_name,title FROM tasks t JOIN comments c ON t.id = c.task_id;
+-- CTE => 예시에는 CTD 효과가 별로 없지만 GROUP BY, HAVING등 복잡한 조건있을때 유용 => 서브쿼리 테이블을 상단에서 선언해서 가독을 챙기는 느낌
+WITH comment_task AS (SELECT task_id FROM comments) SELECT project_name,title FROM tasks t WHERE t.id IN (SELECT task_id FROM comment_task);
+-- 3-7 집합연산
+-- UNION / UNION ALL // UNION은 중복제거, UNION ALL은 중복허용 // 컬럼 개수 및 데이터 타입이 동일하면 OK
+-- IMPORTANT: 생각보다 중복제거 비용이 있다 DISTINCT도 마찬가지. 최대한 쿼리를 파악한 다음 안되면 써야한다
+SELECT id AS task_id FROM tasks UNION ALL SELECT task_id FROM comments;
+-- INTERSECT: 테이블이 같다면 AND 조건을 생각해보자
+SELECT owner_id FROM projects INTERSECT SELECT author_id FROM comments;
+-- EXCEPT: 차집합
+SELECT owner_id FROM projects EXCEPT SELECT author_id FROM comments;
+-- JOIN 집중 // 기본 개념은 CROSS를 제외하곤 곱집합테이블 
+-- => ON으로 필터링인데 실제 옵티마이저가 곱집합을 만들때 최적화 및 인덱스제공등으로 실제로 곱집합이 만들어지는 경우보다는 성능이 괜찮다.
+
+-- J-1. 종류별 1번씩
+-- INNER JOIN
+SELECT project_id,title FROM tasks t INNER JOIN projects p ON t.project_id = p.id;
+-- LEFT JOIN
+-- RIGHT JOIN
+-- SELF JOIN
