@@ -224,9 +224,9 @@ CREATE TABLE comments (
 
 #### J-1. 종류별 한 번씩
 - [v] INNER JOIN — "프로젝트 + 그 프로젝트의 태스크" (양쪽 다 있는 것만)
-- [ ] LEFT JOIN — "모든 프로젝트 + 태스크" (태스크 0개 프로젝트도 나오게)
-- [ ] RIGHT JOIN — LEFT를 뒤집으면 같다는 것만 확인 (실무선 LEFT로 통일하는 이유)
-- [ ] SELF JOIN — "같은 프로젝트에 속한 다른 태스크 짝" (`tasks t1 ⨝ tasks t2 ON t1.project_id=t2.project_id AND t1.id<>t2.id`)
+- [v] LEFT JOIN — "모든 프로젝트 + 태스크" (태스크 0개 프로젝트도 나오게)
+- [v] RIGHT JOIN — LEFT를 뒤집으면 같다는 것만 확인 (실무선 LEFT로 통일하는 이유)
+- [v] SELF JOIN — "같은 프로젝트에 속한 다른 태스크 짝" (`tasks t1 ⨝ tasks t2 ON t1.project_id=t2.project_id AND t1.id<>t2.id`)
 - [ ] CROSS JOIN — 카티전 곱이 뭔지 작은 데이터로 한 번
 
 #### J-2. 자주 쓰는 상황 (이게 본론)

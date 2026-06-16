@@ -91,8 +91,19 @@ SELECT owner_id FROM projects EXCEPT SELECT author_id FROM comments;
 -- => ON으로 필터링인데 실제 옵티마이저가 곱집합을 만들때 최적화 및 인덱스제공등으로 실제로 곱집합이 만들어지는 경우보다는 성능이 괜찮다.
 
 -- J-1. 종류별 1번씩
--- INNER JOIN
+-- INNER JOIN = 왼쪽테이블 기준으로 JOIN후 매칭이 안되는 row는 버리는 형태
 SELECT project_id,title FROM tasks t INNER JOIN projects p ON t.project_id = p.id;
--- LEFT JOIN
--- RIGHT JOIN
--- SELF JOIN
+-- LEFT JOIN => 왼쪽테이블 기준으로 JOIN후 매칭이 안되는 row는 NULL로 채우는 형태 (항상 기준테이블 row는 보존)
+SELECT c.id AS comment_id,body,name,email FROM comments c LEFT JOIN users u ON c.author_id = u.id;
+-- RIGHT JOIN => 오른쪽테이블 기준으로 JOIN후 매칭이 안되는 row는 NULL로 채우는 형태 (항상 기준테이블 row는 보존
+-- 읽는 순서상 왼쪽 -> 오른쪽순일건데 RIGHT JOIN은 JOIN 기준점이 오른쪽에 붙어서 읽는 사람이 헷갈릴 수 있어 결과조차 이상해질수있다. 그래서 LEFT JOIN을 더 선호하는 편이다.
+SELECT c.id AS comment_id,body,name,email FROM comments c RIGHT JOIN users u ON c.author_id = u.id;
+-- SELF JOIN -> 테이블 내 데이터가 재귀적인 관계를 가질 때 자기 자신과 JOIN하는 형태
+SELECT id AS task_id,t2.id AS sub_task_id FROM tasks t1 JOIN tasks t2 ON t1.id = t2.sub_task_id;
+-- CROSS JOIN (TODO: 해당 쿼리 뜯어달라고 하기) -> ON 조건 없이 n*m 테이블 만들어줌 -> 주로 보고서등 작성시 모든 경우에수에대한 COUNT 데이터 등이 필요할때 사용
+SELECT p.name AS project_name, s.status, COUNT(t.id) AS count
+  FROM projects p                                                                                       
+  CROSS JOIN (VALUES ('todo'),('doing'),('done')) AS s(status)
+  LEFT JOIN tasks t ON t.project_id = p.id AND t.status = s.status
+  GROUP BY p.name, s.status
+  ORDER BY p.name DESC, s.status;
