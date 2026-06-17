@@ -107,3 +107,17 @@ SELECT p.name AS project_name, s.status, COUNT(t.id) AS count
   LEFT JOIN tasks t ON t.project_id = p.id AND t.status = s.status
   GROUP BY p.name, s.status
   ORDER BY p.name DESC, s.status;
+
+-- J-2. 상황별 응용
+-- 부모 + 자식 한줄에
+SELECT t.id AS task_id,project_id,p.name,t.title FROM tasks t LEFT JOIN projects p ON t.project_id = p.id LIMIT 25;
+-- 3개 이상 JOIN
+SELECT t.assignee_id, u.name AS assigenn_name, p.name AS project_name,t.title AS task_title
+FROM tasks t
+LEFT JOIN projects p ON p.id = t.project_id
+LEFT JOIN users u ON t.assignee_id = u.id;
+-- 자식 없는 부모 찾기
+SELECT p.name FROM projects p LEFT JOIN tasks t ON p.id = t.project_id WHERE t.id IS NULL;
+-- 담당자 없는 task
+-- JOIN + 집계
+-- JOIN + 필터
